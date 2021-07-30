@@ -1,59 +1,57 @@
-
-const fetch = require('node-fetch');
+//Add the mysql and fs modules
 const mysql = require('mysql');
 const fs = require("fs");
-let text = fs.readFileSync("./quotes.txt").toString('utf-8');
-let arr = text.split();
-console.log(arr);
+require('dotenv').config();
+
+
+//MySQL Connection to online database.
 const connection = mysql.createConnection({
   host: 'remotemysql.com',
-  user: 'gEXwClf9F0',
-  password: '36xcqpqZdz',
-  database: 'gEXwClf9F0'
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME
 });
 
 
-
-const sadWords = ["sad", "depressed", "unhappy", "angry"]
-
-const starterEncouragements = [
-  "Cheer Up!",
-  "Hang in there.]",
-  "You are a great person / bot!"
-];
-
-function createTable(tableName,dataName,dataType){
-  const sql = `CREATE TABLE ${tableName} (${dataName} ${dataType})`
-  connection.query(sql,(err,result) => {
-    if (err) throw err;
-    console.log("Table Created");
-  })
-}
-let arr2 = [['Hello matey'], ['Quote 2']];
-function insertTable(tableName, dataName, array) {
-  const sql = `INSERT INTO ${tableName} (${dataName}) VALUES ?`;
-  connection.query(sql, [array], (err, result) => {
+//function for inserting quotes from a text file
+function insertTable(quote, source) {
+  let text = fs.readFileSync(`./source/${source}"`).toString('utf-8').split('\n');
+  let newArr = quote;
+  for(let i = 0; i < text.length; i++){
+    newArr[i] = new Array (text[i])
+    
+  }
+  const sql = `INSERT INTO quotes (quoteName) VALUES ?`;
+  connection.query(sql, [quote], (err, result) => {
     if (err) throw err;
     console.log('Number of records inserted: ' + result.affectedRows);
   });
     
 }
 
-function get(tableName){
-  const sql =  `SELECT * FROM ${tableName}`;
-  connection.query(sql,(err,result) => {
-    if (err) throw err;
-    console.log(result);
-  })
- }
 
-function getQuotes(tableName){
-  const sql = `SELECT * FROM ${tableName}`;
-  connection.query(sql, (err,result)=>{
+//function to get random quote from database.
+function getRandQuotes() {
+  return new Promise((resolve, reject)=>{
+    const sql = `SELECT * FROM quotes`;
+	  connection.query(sql, (err, result)=>{
     if (err) throw err;
-    console.log(JSON.stringify(result).split());
+    let resultArr = Object.values(result);
+    //console.log(resultArr);
+    const rand = Math.floor(Math.random() * (resultArr.length - 1));
+    const resul = JSON.parse(JSON.stringify(result));
+    resolve(resul[rand].quoteName);
   })
+  })
+  
 }
-//insertTable('test', 'first', arr2);
-getQuotes('test');
+
+
+module.exports = { getRandQuotes };
+
+
+
+
+
+
 
